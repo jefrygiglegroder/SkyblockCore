@@ -19,7 +19,11 @@ public class IslandTabCompleter implements TabCompleter {
                 suggestions.add("join");
                 suggestions.add("upgrade");
                 suggestions.add("leave");
-                suggestions.add("stats"); // Add the new "stats" command suggestion
+                suggestions.add("stats");
+                suggestions.add("pos1");
+                suggestions.add("pos2");
+                suggestions.add("export");
+                suggestions.add("import");
             }
         }
 

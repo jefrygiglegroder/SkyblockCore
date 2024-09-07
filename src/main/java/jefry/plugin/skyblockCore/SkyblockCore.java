@@ -1,7 +1,9 @@
 package jefry.plugin.skyblockCore;
 
 import jefry.plugin.skyblockCore.Listeners.PlayerEventListener;
+import jefry.plugin.skyblockCore.Managers.CoinManager;
 import jefry.plugin.skyblockCore.Managers.IslandManager;
+import jefry.plugin.skyblockCore.Managers.IslandSelectionManager;
 import jefry.plugin.skyblockCore.UI.StatsUI;
 import jefry.plugin.skyblockCore.UI.UpgradeUI;
 import jefry.plugin.skyblockCore.commands.IslandCommandExecutor;
@@ -19,7 +21,13 @@ import java.util.UUID;
 public class SkyblockCore extends JavaPlugin {
 
     private IslandManager islandManager;
+    private CoinManager coinManager; // Added CoinManager
+
+    private IslandSelectionManager islandSelectionManager; // Added IslandSelectionManager
+
     private StatsUI statsUI;
+
+
 
     // Map to store player stats
     private final Map<UUID, PlayerStats> playerStatsMap = new HashMap<UUID, PlayerStats>();
@@ -44,6 +52,11 @@ public class SkyblockCore extends JavaPlugin {
         IslandCommandExecutor islandCommandExecutor = new IslandCommandExecutor(this);
         getCommand("island").setExecutor(islandCommandExecutor);
         getCommand("island").setTabCompleter(new IslandTabCompleter());
+
+
+        coinManager = new CoinManager(this);  // Initialize CoinManager
+        islandSelectionManager = new IslandSelectionManager();  // Initialize selection manager
+
 
         getLogger().info("Skyblock Plugin enabled!");
     }
@@ -84,5 +97,11 @@ public class SkyblockCore extends JavaPlugin {
         for (UUID playerId : playerStatsMap.keySet()) {
             savePlayerStats(playerId);
         }
+    }
+    public CoinManager getCoinManager() {
+        return coinManager;
+    }
+    public IslandSelectionManager getIslandSelectionManager() {
+        return islandSelectionManager;
     }
 }

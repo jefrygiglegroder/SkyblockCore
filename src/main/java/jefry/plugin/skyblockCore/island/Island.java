@@ -1,6 +1,5 @@
 package jefry.plugin.skyblockCore.island;
 
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.configuration.file.YamlConfiguration;
 
@@ -9,10 +8,8 @@ import java.io.IOException;
 import java.util.UUID;
 
 public class Island {
-    public static final int MAX_GENERATOR_LEVEL = 5; // Example maximum level
-    private final UUID ownerId;
-    private final Location location;
-    private int generatorLevel = 1; // Default level
+    private UUID ownerId;
+    private Location location;
 
     public Island(UUID ownerId, Location location) {
         this.ownerId = ownerId;
@@ -27,22 +24,15 @@ public class Island {
         return location;
     }
 
-    public int getGeneratorLevel() {
-        return generatorLevel;
-    }
-
-    public void setGeneratorLevel(int level) {
-        this.generatorLevel = level;
-    }
-
+    // Save island data to a file
     public void save(File file) {
         YamlConfiguration config = new YamlConfiguration();
-        config.set("owner", ownerId.toString());
+        config.set("ownerId", ownerId.toString());
         config.set("location.world", location.getWorld().getName());
         config.set("location.x", location.getX());
         config.set("location.y", location.getY());
         config.set("location.z", location.getZ());
-        config.set("generatorLevel", generatorLevel);
+
         try {
             config.save(file);
         } catch (IOException e) {
@@ -50,17 +40,16 @@ public class Island {
         }
     }
 
+    // Load island data from a file (if necessary)
     public static Island load(File file) {
         YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
-        UUID ownerId = UUID.fromString(config.getString("owner"));
-        Location location = new Location(
-                Bukkit.getWorld(config.getString("location.world")),
-                config.getDouble("location.x"),
-                config.getDouble("location.y"),
-                config.getDouble("location.z")
-        );
-        Island island = new Island(ownerId, location);
-        island.setGeneratorLevel(config.getInt("generatorLevel", 1)); // Default to level 1 if not present
-        return island;
+        UUID ownerId = UUID.fromString(config.getString("ownerId"));
+        String worldName = config.getString("location.world");
+        double x = config.getDouble("location.x");
+        double y = config.getDouble("location.y");
+        double z = config.getDouble("location.z");
+
+        Location location = new Location(org.bukkit.Bukkit.getWorld(worldName), x, y, z);
+        return new Island(ownerId, location);
     }
 }
