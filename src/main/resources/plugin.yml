@@ -1,0 +1,9 @@
+name: SkyblockCore
+version: '1.0'
+main: jefry.plugin.skyblockCore.SkyblockCore
+api-version: '1.21'
+commands:
+  island:
+    description: Manage your island in Skyblock.
+    usage: /<command> <create|join|upgrade|leave|stats>
+    aliases: [isl]
