@@ -1,12 +1,15 @@
 package jefry.plugin.skyblockCore.commands;
 
 import jefry.plugin.skyblockCore.SkyblockCore;
-import jefry.plugin.skyblockCore.UI.UpgradeUI;
+import jefry.plugin.skyblockCore.Managers.CoinManager;
+import jefry.plugin.skyblockCore.UI.ShopUI;
 import jefry.plugin.skyblockCore.UI.StatsUI;
+import jefry.plugin.skyblockCore.UI.UpgradeUI;
 import jefry.plugin.skyblockCore.VoidWorldGenerator;
 import org.bukkit.Bukkit;
-import org.bukkit.WorldCreator;
+import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.WorldCreator;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -17,9 +20,11 @@ import java.util.UUID;
 public class IslandCommandExecutor implements CommandExecutor {
 
     private final SkyblockCore plugin;
+    private final CoinManager coinManager;
 
     public IslandCommandExecutor(SkyblockCore plugin) {
         this.plugin = plugin;
+        this.coinManager = plugin.getCoinManager(); // Assuming SkyblockCore has a method to access CoinManager
     }
 
     @Override
@@ -30,7 +35,7 @@ public class IslandCommandExecutor implements CommandExecutor {
         }
 
         if (args.length == 0) {
-            player.sendMessage("Usage: /island <create|join|upgrade|leave|stats|createworld>");
+            player.sendMessage("Usage: /island <create|join|upgrade|leave|stats|createworld|setmoney|addmoney|removemoney>");
             return true;
         }
 
@@ -46,26 +51,93 @@ public class IslandCommandExecutor implements CommandExecutor {
             case "upgrade":
                 upgradeIsland(player);
                 break;
+            case "shop":
+                openShop(player);
+                break;
             case "leave":
                 leaveIsland(player);
                 break;
             case "stats":
                 openStats(player);
                 break;
-            case "export":
-                exportIsland(player);  // Call the export method
+            case "setmoney":
+                if (args.length > 1) {
+                    setMoney(player, args[1]);
+                } else {
+                    player.sendMessage("Usage: /island setmoney <amount>");
+                }
                 break;
-            case "import":
-                importIsland(player);  // Call the import method
+            case "addmoney":
+                if (args.length > 1) {
+                    addMoney(player, args[1]);
+                } else {
+                    player.sendMessage("Usage: /island addmoney <amount>");
+                }
                 break;
-            case "createworld":
-                createSkyWorld(player);  // Command to create the "sky" world
+            case "removemoney":
+                if (args.length > 1) {
+                    removeMoney(player, args[1]);
+                } else {
+                    player.sendMessage("Usage: /island removemoney <amount>");
+                }
                 break;
             default:
-                player.sendMessage("Unknown subcommand. Usage: /island <create|join|upgrade|leave|stats|export|import|createworld>");
+                player.sendMessage("Unknown subcommand. Usage: /island <create|join|upgrade|leave|stats|setmoney|addmoney|removemoney>");
                 break;
         }
         return true;
+    }
+
+    private void setMoney(Player player, String amountStr) {
+        try {
+            int amount = Integer.parseInt(amountStr);
+            coinManager.addCoins(player.getUniqueId(), -coinManager.getCoins(player.getUniqueId())); // Reset to 0
+            coinManager.addCoins(player.getUniqueId(), amount);
+            player.sendMessage("Your balance has been set to " + amount + " coins.");
+        } catch (NumberFormatException e) {
+            player.sendMessage("Invalid amount. Please enter a valid number.");
+        }
+    }
+
+    private void addMoney(Player player, String amountStr) {
+        try {
+            int amount = Integer.parseInt(amountStr);
+            coinManager.addCoins(player.getUniqueId(), amount);
+            player.sendMessage(amount + " coins have been added to your account.");
+        } catch (NumberFormatException e) {
+            player.sendMessage("Invalid amount. Please enter a valid number.");
+        }
+    }
+
+    private void removeMoney(Player player, String amountStr) {
+        try {
+            int amount = Integer.parseInt(amountStr);
+            if (coinManager.deductCoins(player.getUniqueId(), amount)) {
+                player.sendMessage(amount + " coins have been removed from your account.");
+            } else {
+                player.sendMessage("Insufficient funds to remove " + amount + " coins.");
+            }
+        } catch (NumberFormatException e) {
+            player.sendMessage("Invalid amount. Please enter a valid number.");
+        }
+    }
+
+    private void openShop(Player player) {
+        ShopUI shopUI = new ShopUI(plugin);
+        shopUI.openShopMenu(player);
+        player.sendMessage("Opening the shop...");
+    }
+
+    private void setPos1(Player player) {
+        Location location = player.getLocation();
+        plugin.getIslandSelectionManager().setPos1(player, location);
+        player.sendMessage("Position 1 set to your current location.");
+    }
+
+    private void setPos2(Player player) {
+        Location location = player.getLocation();
+        plugin.getIslandSelectionManager().setPos2(player, location);
+        player.sendMessage("Position 2 set to your current location.");
     }
 
     private void createIsland(Player player) {
@@ -118,5 +190,16 @@ public class IslandCommandExecutor implements CommandExecutor {
     private void importIsland(Player player) {
         plugin.getIslandManager().importIsland(player);
         player.sendMessage("Island imported successfully!");
+    }
+    private void teleportToWorld(Player player, String worldName) {
+        World world = Bukkit.getWorld(worldName);
+        if (world == null) {
+            player.sendMessage("World '" + worldName + "' does not exist.");
+            return;
+        }
+
+        Location spawnLocation = world.getSpawnLocation();
+        player.teleport(spawnLocation);
+        player.sendMessage("You have been teleported to the world '" + worldName + "'.");
     }
 }

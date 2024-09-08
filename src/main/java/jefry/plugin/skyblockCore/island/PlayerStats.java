@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.UUID;
 
 public class PlayerStats {
+
     private final UUID playerId;
 
     // Define various stats and their levels
@@ -26,12 +27,15 @@ public class PlayerStats {
         this.playerId = playerId;
     }
 
+    // Getters and Leveling Up Methods
     public int getFarmingLevel() {
         return farmingLevel;
     }
 
     public void increaseFarmingLevel() {
         this.farmingLevel++;
+        // Notify the player about leveling up (optional if this is handled elsewhere)
+        System.out.println("Farming Level increased to " + farmingLevel + "!");
     }
 
     public int getMiningLevel() {
@@ -40,6 +44,7 @@ public class PlayerStats {
 
     public void increaseMiningLevel() {
         this.miningLevel++;
+        System.out.println("Mining Level increased to " + miningLevel + "!");
     }
 
     public int getSwordsmanshipLevel() {
@@ -48,6 +53,7 @@ public class PlayerStats {
 
     public void increaseSwordsmanshipLevel() {
         this.swordsmanshipLevel++;
+        System.out.println("Swordsmanship Level increased to " + swordsmanshipLevel + "!");
     }
 
     public int getBowmanshipLevel() {
@@ -56,17 +62,18 @@ public class PlayerStats {
 
     public void increaseBowmanshipLevel() {
         this.bowmanshipLevel++;
+        System.out.println("Bowmanship Level increased to " + bowmanshipLevel + "!");
     }
 
+    // XP Getters and XP Adding Methods with Auto-Leveling
     public int getFarmingXP() {
         return farmingXP;
     }
 
     public void addFarmingXP(int xp) {
         this.farmingXP += xp;
-        // Level up if enough XP
         if (this.farmingXP >= getXPRequiredForNextLevel(farmingLevel)) {
-            this.farmingXP -= getXPRequiredForNextLevel(farmingLevel);
+            this.farmingXP -= getXPRequiredForNextLevel(farmingLevel); // Rollover XP
             increaseFarmingLevel();
         }
     }
@@ -77,7 +84,6 @@ public class PlayerStats {
 
     public void addMiningXP(int xp) {
         this.miningXP += xp;
-        // Level up if enough XP
         if (this.miningXP >= getXPRequiredForNextLevel(miningLevel)) {
             this.miningXP -= getXPRequiredForNextLevel(miningLevel);
             increaseMiningLevel();
@@ -90,7 +96,6 @@ public class PlayerStats {
 
     public void addSwordsmanshipXP(int xp) {
         this.swordsmanshipXP += xp;
-        // Level up if enough XP
         if (this.swordsmanshipXP >= getXPRequiredForNextLevel(swordsmanshipLevel)) {
             this.swordsmanshipXP -= getXPRequiredForNextLevel(swordsmanshipLevel);
             increaseSwordsmanshipLevel();
@@ -103,19 +108,18 @@ public class PlayerStats {
 
     public void addBowmanshipXP(int xp) {
         this.bowmanshipXP += xp;
-        // Level up if enough XP
         if (this.bowmanshipXP >= getXPRequiredForNextLevel(bowmanshipLevel)) {
             this.bowmanshipXP -= getXPRequiredForNextLevel(bowmanshipLevel);
             increaseBowmanshipLevel();
         }
     }
 
+    // Calculate the XP required for the next level (can be configured or dynamic)
     private int getXPRequiredForNextLevel(int currentLevel) {
-        // Define XP required for the next level
-        return 100 * currentLevel; // Example formula
+        return 100 * currentLevel; // Example formula: increases by 100 XP per level
     }
 
-    // Save stats to a file
+    // Save stats to a file (asynchronously if needed for performance)
     public void save(File file) {
         YamlConfiguration config = new YamlConfiguration();
         config.set("farmingLevel", farmingLevel);

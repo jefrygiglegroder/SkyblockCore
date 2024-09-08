@@ -1,5 +1,7 @@
 package jefry.plugin.skyblockCore;
 
+import jefry.plugin.skyblockCore.Listeners.BlockBreakListener;
+import jefry.plugin.skyblockCore.Listeners.EntityKillListener;
 import jefry.plugin.skyblockCore.Listeners.PlayerEventListener;
 import jefry.plugin.skyblockCore.Managers.CoinManager;
 import jefry.plugin.skyblockCore.Managers.IslandManager;
@@ -44,6 +46,9 @@ public class SkyblockCore extends JavaPlugin {
         // Register upgrade UI
         UpgradeUI upgradeUI = new UpgradeUI(this);
         getServer().getPluginManager().registerEvents(upgradeUI, this);
+
+        getServer().getPluginManager().registerEvents(new BlockBreakListener(this), this);
+        getServer().getPluginManager().registerEvents(new EntityKillListener(this), this);
 
         // Register events and commands
         getServer().getPluginManager().registerEvents(new PlayerEventListener(this), this);
