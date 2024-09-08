@@ -60,6 +60,28 @@ public class IslandCommandExecutor implements CommandExecutor {
             case "stats":
                 openStats(player);
                 break;
+            case "pos1":
+                setPos1(player);
+                break;
+            case "pos2":
+                setPos2(player);
+                break;
+            case "export":
+                exportIsland(player);
+                break;
+            case "import":
+                importIsland(player);
+                break;
+            case "createworld":
+                createSkyWorld(player);
+                break;
+            case "tp":
+                if (args.length > 1) {
+                    teleportToWorld(player, args[1]);
+                } else {
+                    player.sendMessage("Usage: /island tp <world>");
+                }
+                break;
             case "setmoney":
                 if (args.length > 1) {
                     setMoney(player, args[1]);
