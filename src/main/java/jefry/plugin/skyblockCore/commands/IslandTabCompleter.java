@@ -18,17 +18,40 @@ public class IslandTabCompleter implements TabCompleter {
         if (command.getName().equalsIgnoreCase("island")) {
             if (args.length == 1) {
                 suggestions.add("create");
+
                 suggestions.add("join");
+
                 suggestions.add("upgrade");
+
                 suggestions.add("leave");
+
                 suggestions.add("stats");
+
                 suggestions.add("pos1");
+
                 suggestions.add("pos2");
+
                 suggestions.add("export");
+
                 suggestions.add("import");
+
                 suggestions.add("shop");
+
                 suggestions.add("createworld");
+
                 suggestions.add("tp");
+
+                suggestions.add("removemoney");
+
+                suggestions.add("addmoney");
+
+                suggestions.add("setmoney");
+
+                suggestions.add("give");
+
+                suggestions.add("enchant");
+
+                suggestions.add("home");
             } else if (args.length == 2 && args[0].equalsIgnoreCase("tp")) {
                 // Suggest available worlds for the tp command
                 for (World world : Bukkit.getWorlds()) {

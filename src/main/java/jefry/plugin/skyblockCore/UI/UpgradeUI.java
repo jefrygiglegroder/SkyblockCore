@@ -11,9 +11,7 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.Inventory;
 
 public class UpgradeUI implements Listener {
-
     private final SkyblockCore plugin;
-
     public UpgradeUI(SkyblockCore plugin) {
         this.plugin = plugin;
     }

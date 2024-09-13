@@ -6,8 +6,9 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.entity.Player;
 
-public class PlayerJoinListener implements Listener {
+import static jefry.plugin.skyblockCore.SkyblockCore.plugin;
 
+public class PlayerJoinListener implements Listener {
     private final SkyblockCore plugin;
 
     public PlayerJoinListener(SkyblockCore plugin) {

@@ -12,13 +12,10 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.Inventory;
 
 public class StatsUI implements Listener {
-
     private final SkyblockCore plugin;
-
     public StatsUI(SkyblockCore plugin) {
         this.plugin = plugin;
     }
-
     public void openStatsMenu(Player player) {
         Inventory inventory = Bukkit.createInventory(null, 27, "Player Stats");
 

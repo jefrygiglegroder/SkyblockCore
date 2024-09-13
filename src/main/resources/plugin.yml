@@ -1,5 +1,5 @@
 name: SkyblockCore
-version: '1.3'
+version: '2.1'
 main: jefry.plugin.skyblockCore.SkyblockCore
 api-version: '1.21'
 commands:

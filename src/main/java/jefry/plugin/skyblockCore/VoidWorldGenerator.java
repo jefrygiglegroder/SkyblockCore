@@ -12,3 +12,4 @@ public class VoidWorldGenerator extends ChunkGenerator {
         return createChunkData(world); // This generates an empty chunk (all air)
     }
 }
+

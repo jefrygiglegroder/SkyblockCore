@@ -10,9 +10,17 @@ import jefry.plugin.skyblockCore.UI.StatsUI;
 import jefry.plugin.skyblockCore.UI.UpgradeUI;
 import jefry.plugin.skyblockCore.commands.IslandCommandExecutor;
 import jefry.plugin.skyblockCore.commands.IslandTabCompleter;
+import jefry.plugin.skyblockCore.enchantments.AutoPickupEnchantment;
+import jefry.plugin.skyblockCore.enchantments.CustomEnchantments;
 import jefry.plugin.skyblockCore.island.CobblestoneGenerator;
 import jefry.plugin.skyblockCore.island.PlayerStats;
+import org.bukkit.World;
+import org.bukkit.WorldCreator;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.enchantments.Enchantment;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.world.WorldLoadEvent;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
@@ -29,15 +37,26 @@ public class SkyblockCore extends JavaPlugin {
 
     private StatsUI statsUI;
 
-
+    public static Plugin plugin;
 
     // Map to store player stats
     private final Map<UUID, PlayerStats> playerStatsMap = new HashMap<UUID, PlayerStats>();
 
     @Override
     public void onEnable() {
+        try {
+            // Register custom enchantments
+            CustomEnchantments.registerAllEnchantments();
+            getLogger().info("Custom enchantments registered successfully.");
+        } catch (Exception e) {
+            getLogger().severe("Failed to register custom enchantments: " + e.getMessage());
+        }
+
+        plugin = this;
+
         // Initialize island manager
         islandManager = new IslandManager(this);
+        coinManager = new CoinManager(this);
 
         // Initialize and register stats UI
         statsUI = new StatsUI(this);
@@ -55,17 +74,24 @@ public class SkyblockCore extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new CobblestoneGenerator(this), this);
 
         IslandCommandExecutor islandCommandExecutor = new IslandCommandExecutor(this);
-        getCommand("island").setExecutor(islandCommandExecutor);
+        getCommand("island").setExecutor(new IslandCommandExecutor(this));
         getCommand("island").setTabCompleter(new IslandTabCompleter());
-
 
         coinManager = new CoinManager(this);  // Initialize CoinManager
         islandSelectionManager = new IslandSelectionManager();  // Initialize selection manager
 
-
         getLogger().info("Skyblock Plugin enabled!");
+        // Check if the world exists
+        World skyblockWorld = getServer().getWorld("sky");
+        if (skyblockWorld == null) {
+            getLogger().info("Skyblock world does not exist, creating world...");
+            WorldCreator worldCreator = new WorldCreator("sky");
+            worldCreator.generator(new VoidWorldGenerator());
+            skyblockWorld = worldCreator.createWorld();
+        } else {
+            getLogger().info("Skyblock world already exists, loading world...");
+        }
     }
-
 
     @Override
     public void onDisable() {
@@ -104,9 +130,19 @@ public class SkyblockCore extends JavaPlugin {
         }
     }
     public CoinManager getCoinManager() {
-        return coinManager;
+        return this.coinManager;
     }
     public IslandSelectionManager getIslandSelectionManager() {
         return islandSelectionManager;
     }
+
+    @EventHandler
+    public void onWorldLoad(WorldLoadEvent event) {
+        World loadedWorld = event.getWorld();
+        if (loadedWorld.getName().equals("sky")) {
+            getLogger().info("Skyblock world has been loaded.");
+            // Initialize anything else required after the world has been loaded
+        }
+    }
+
 }

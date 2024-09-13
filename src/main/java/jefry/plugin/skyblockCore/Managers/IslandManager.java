@@ -1,6 +1,7 @@
 package jefry.plugin.skyblockCore.Managers;
 
 import jefry.plugin.skyblockCore.SkyblockCore;
+import jefry.plugin.skyblockCore.UI.IslandSelectionUI;
 import jefry.plugin.skyblockCore.island.Island;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -24,6 +25,8 @@ public class IslandManager {
     private final File savesFolder;
     private final FileConfiguration config;
     private final File defaultIslandFile;
+    private final Map<UUID, Location> islandLocations = new HashMap<>(); // Stores island locations by player UUID
+
 
     public IslandManager(SkyblockCore plugin) {
         this.plugin = plugin;
@@ -50,6 +53,16 @@ public class IslandManager {
             return;
         }
 
+        // Open the selection UI to choose an island
+        IslandSelectionUI.openIslandSelectionUI(player, plugin);
+
+        // The island creation logic will now be handled after player selection in IslandSelectionUI
+    }
+
+    // Method to actually create the island after selection
+    public void createIslandFromTemplate(Player player, String templateName) {
+        UUID playerId = player.getUniqueId();
+
         // Ensure we're using the "sky" world
         World skyWorld = Bukkit.getWorld("sky");
         if (skyWorld == null) {
@@ -57,25 +70,50 @@ public class IslandManager {
             return;
         }
 
-        // If a default island is configured, load that island
-        if (defaultIslandFile != null && defaultIslandFile.exists()) {
-            Location spawnLocation = findNextAvailableLocation(skyWorld);
-            importIslandFromFile(player, spawnLocation, defaultIslandFile);
-            player.teleport(spawnLocation);
-            player.sendMessage("A default island has been loaded for you.");
-        } else {
-            // Normal island creation if no default island is configured
-            Location location = findNextAvailableLocation(skyWorld);
-            Island island = new Island(playerId, location);
-            islands.put(playerId, island);
-            saveIslandData(playerId, island);
-            player.teleport(location);
-            player.sendMessage("Your island has been created in the 'sky' world!");
+        // Check if the player already has an island
+        if (createdIslands.getOrDefault(playerId, false)) {
+            player.sendMessage("You already have an island. Use /island tp to teleport there.");
+            return;
         }
 
-        // Mark that the player has created their island
-        createdIslands.put(playerId, true);
+        // Find next available location and create the island there
+        Location islandLocation = findNextAvailableLocation(skyWorld);
+
+        // Save the island template at the new location
+        File islandFile = new File(savesFolder, templateName + ".yml");
+        if (islandFile.exists()) {
+            importIslandFromFile(player, islandLocation, islandFile);
+            player.teleport(islandLocation);
+
+            // Store the player's island location and mark the island as created
+            islandLocations.put(playerId, islandLocation); // Save in memory
+            createdIslands.put(playerId, true); // Mark as created
+            saveIslandLocation(playerId, islandLocation); // Save the location to a file
+            player.sendMessage("Your " + templateName + " island has been created in the 'sky' world!");
+        } else {
+            player.sendMessage("Selected island template not found.");
+        }
     }
+
+    private void saveIslandLocation(UUID playerId, Location location) {
+        File locationFile = new File(savesFolder, "island_locations.yml");
+        YamlConfiguration config = YamlConfiguration.loadConfiguration(locationFile);
+
+        // Save the player's island coordinates
+        config.set(playerId + ".world", location.getWorld().getName());
+        config.set(playerId + ".x", location.getX());
+        config.set(playerId + ".y", location.getY());
+        config.set(playerId + ".z", location.getZ());
+
+        try {
+            config.save(locationFile);
+            plugin.getLogger().info("Island location for player " + playerId + " has been saved.");
+        } catch (IOException e) {
+            plugin.getLogger().severe("Failed to save island location for player " + playerId);
+            e.printStackTrace();
+        }
+    }
+
 
     // Import island from a default file for the player, adjusted to import in front of the player
     private void importIslandFromFile(Player player, Location originalLocation, File islandFile) {
@@ -99,6 +137,30 @@ public class IslandManager {
             player.sendMessage("Failed to import the island.");
             e.printStackTrace();
         }
+    }
+
+    public void loadIslandLocations() {
+        File locationFile = new File(savesFolder, "island_locations.yml");
+        if (!locationFile.exists()) {
+            plugin.getLogger().warning("No island locations file found.");
+            return;
+        }
+
+        YamlConfiguration config = YamlConfiguration.loadConfiguration(locationFile);
+
+        // Loop through stored players and load their island locations
+        for (String key : config.getKeys(false)) {
+            UUID playerId = UUID.fromString(key);
+            World world = Bukkit.getWorld(config.getString(key + ".world"));
+            double x = config.getDouble(key + ".x");
+            double y = config.getDouble(key + ".y");
+            double z = config.getDouble(key + ".z");
+
+            Location location = new Location(world, x, y, z);
+            islandLocations.put(playerId, location);
+        }
+
+        plugin.getLogger().info("Island locations have been loaded.");
     }
 
     // Load an existing island for a player
@@ -146,13 +208,14 @@ public class IslandManager {
         int gridSize = 500; // Distance between islands
         int index = islands.size(); // Total number of islands created so far
 
-        // Calculate the X and Z coordinates based on the grid
-        int x = (index % 10) * gridSize;
-        int z = (index / 10) * gridSize;
+        // Ensure we avoid overwriting positions. Calculate position based on grid coordinates
+        int x = (index % 10) * gridSize;  // Change rows every 10 islands
+        int z = (index / 10) * gridSize;  // Move to next "row" of islands after every 10
 
-        // Return the new island location in the void world
+        // Return the new island location in the void world (Y level = 100)
         return new Location(world, x, 100, z); // Y=100 for default island height
     }
+
 
     // Load the region from file and apply the offset
     private void loadRegionFromFile(Location originalLocation, Location offset, File file) {
@@ -197,6 +260,7 @@ public class IslandManager {
         File islandFile = new File(savesFolder, playerId.toString() + "_island.yml");
         island.save(islandFile);
     }
+
     public void saveAllIslands() {
         for (Map.Entry<UUID, Island> entry : islands.entrySet()) {
             UUID playerId = entry.getKey();
@@ -205,6 +269,7 @@ public class IslandManager {
         }
         plugin.getLogger().info("All islands have been saved.");
     }
+
     public void exportIsland(Player player) {
         // Assuming you have a selection system with pos1 and pos2
         if (!plugin.getIslandSelectionManager().isSelectionComplete(player)) {
@@ -225,6 +290,7 @@ public class IslandManager {
             player.sendMessage("Failed to export island.");
         }
     }
+
     public void importIsland(Player player) {
         // Assuming a selection system exists for the positions
         if (!plugin.getIslandSelectionManager().isSelectionComplete(player)) {
@@ -244,6 +310,7 @@ public class IslandManager {
             player.sendMessage("Island export file not found.");
         }
     }
+
     public void upgradeGenerator(Player player) {
         UUID playerId = player.getUniqueId();
         Island island = getIsland(playerId);
@@ -272,6 +339,7 @@ public class IslandManager {
         // Add logic to check for in-game currency, items, etc.
         return true; // Placeholder, assuming they can upgrade for now
     }
+
     private void saveRegionToFile(Location pos1, Location pos2, File file) throws IOException {
         YamlConfiguration config = new YamlConfiguration();
 
@@ -304,8 +372,35 @@ public class IslandManager {
                 }
             }
         }
-
-        // Save the configuration to the file
         config.save(file);
+    }
+
+    public Location getIslandLocation(UUID playerUUID) {
+        // Check if the island location is already stored in memory
+        if (islandLocations.containsKey(playerUUID)) {
+            return islandLocations.get(playerUUID);
+        }
+
+        // If not in memory, load it from the saved island locations file
+        File locationFile = new File(savesFolder, "island_locations.yml");
+        if (!locationFile.exists()) {
+            return null; // No saved locations
+        }
+
+        YamlConfiguration config = YamlConfiguration.loadConfiguration(locationFile);
+        String path = playerUUID.toString();
+
+        // Check if there's an entry for this player's island
+        if (config.contains(path)) {
+            World world = Bukkit.getWorld(config.getString(path + ".world"));
+            double x = config.getDouble(path + ".x");
+            double y = config.getDouble(path + ".y");
+            double z = config.getDouble(path + ".z");
+            Location location = new Location(world, x, y, z);
+            islandLocations.put(playerUUID, location); // Cache it in memory
+            return location;
+        }
+
+        return null; // No location found for the player
     }
 }
